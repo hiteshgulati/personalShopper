@@ -16,6 +16,9 @@ bot.
 
 import logging
 import os
+from dotenv import load_dotenv
+load_dotenv()
+import time
 
 from telegram import __version__ as TG_VER
 
@@ -30,14 +33,14 @@ if __version_info__ < (20, 0, 0, "alpha", 5):
         f"{TG_VER} version of this example, "
         f"visit https://docs.python-telegram-bot.org/en/v{TG_VER}/examples.html"
     )
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update, constants
 from telegram.ext import (
     Application,
     CommandHandler,
     ContextTypes,
     ConversationHandler,
     MessageHandler,
-    filters,
+    filters
 )
 
 # Enable logging
@@ -48,7 +51,22 @@ logger = logging.getLogger(__name__)
 
 GENDER, PHOTO, LOCATION, BIO = range(4)
 
+from functools import wraps
 
+def send_action(action):
+    """Sends `action` while processing func command."""
+
+    def decorator(func):
+        @wraps(func)
+        async def command_func(update, context, *args, **kwargs):
+            await context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=action)
+            time.sleep(2)
+            return await func(update, context,  *args, **kwargs)
+        return command_func
+    
+    return decorator
+
+@send_action(constants.ChatAction.TYPING)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Starts the conversation and asks the user about their gender."""
     reply_keyboard = [["Boy", "Girl", "Other"]]
@@ -64,7 +82,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     return GENDER
 
-
+@send_action(constants.ChatAction.TYPING)
 async def gender(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Stores the selected gender and asks for a photo."""
     user = update.message.from_user
@@ -77,7 +95,7 @@ async def gender(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     return PHOTO
 
-
+@send_action(constants.ChatAction.TYPING)
 async def photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Stores the photo and asks for a location."""
     user = update.message.from_user
@@ -90,7 +108,7 @@ async def photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     return LOCATION
 
-
+@send_action(constants.ChatAction.TYPING)
 async def skip_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Skips the photo and asks for a location."""
     user = update.message.from_user
@@ -101,7 +119,7 @@ async def skip_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     return LOCATION
 
-
+@send_action(constants.ChatAction.TYPING)
 async def location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Stores the location and asks for some info about the user."""
     user = update.message.from_user
@@ -115,7 +133,7 @@ async def location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     return BIO
 
-
+@send_action(constants.ChatAction.TYPING)
 async def skip_location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Skips the location and asks for info about the user."""
     user = update.message.from_user
@@ -135,7 +153,7 @@ async def bio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     return ConversationHandler.END
 
-
+@send_action(constants.ChatAction.TYPING)
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancels and ends the conversation."""
     user = update.message.from_user
@@ -175,4 +193,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     print(os.environ['TELEGRAM_TOKEN'])
-    # main()
+    main()
