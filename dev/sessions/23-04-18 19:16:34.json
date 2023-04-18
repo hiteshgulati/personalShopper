@@ -1,0 +1,13 @@
+{
+    "5744918999": {
+        "conversation_history": [
+            "AI: : Hi there! Welcome to Tata Neu! How can I help you today? Are you looking for something in particular, like mobile phones, groceries, or fashion items?",
+            "Customer: Fashion",
+            "AI: Sorry, we don't currently offer products in the fashion category.",
+            "AI: However, we do have a great selection of mobile phones that you can check out!."
+        ],
+        "token_count": 1285,
+        "user": 5744918999,
+        "user_name": "HG"
+    }
+}

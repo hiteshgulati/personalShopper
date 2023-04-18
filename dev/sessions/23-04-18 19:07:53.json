@@ -1,0 +1,27 @@
+{
+    "5744918999": {
+        "conversation_history": [
+            "AI: : Hi there! Welcome to Tata Neu! How can I help you today? Are you looking for something specific from our Mobile, Grocery, or Fashion departments?",
+            "Customer: Mobiles",
+            "AI: Yes, we do have mobiles in our store.",
+            "AI: We have Apple iPhone 14 Pro, Samsung Galaxy S23 Ultra, and Google Pixel 7 Pro.",
+            "AI: Which one are you looking for?.",
+            "Customer: Google pixel",
+            "AI: Yes, we do have Google Pixel 7 Pro in our store..",
+            "AI: Great choice! Google Pixel 7 Pro is a great option.",
+            "AI: It will cost you ₹ 80000 and will be delivered to you within 3 days.",
+            "AI: Is there anything else I can help you with?.",
+            "AI: Please use this link to finalize the order.",
+            "Customer: What are the specs of Google pixel",
+            "AI: The specs of the Google Pixel 7 Pro are Network Technology: GSM / CDMA / HSPA / EVDO / LTE / 5G, SIM Type: Dual SIM, Launched: 06 Oct 2022, Dimensions: 162.9 x 76.6 x 8.9 mm, Weight: 234 g, Rating: IP68 dust/water resistant, Display Type: LTPO AMOLED, Refresh Rate: 120Hz, more is better, Size: 6.7 inches, OS: Android 13, Chipset: Google Tensor G2, Front Camera: 3, Battery Capacity: 5000 mAh, more is better, Battery Life: 83 hours, more is better, Wireless Charging: True, Colors Available: Obsidian Black, Snow White, Hazel Green, Price: ₹ 80000, Discount: Maximum 5%, and Delivery Time: 3 days..",
+            "Customer: Can you campare pixel and galaxy?",
+            "AI: Yes, I can compare the two phones for you.",
+            "AI: I can provide you with the key differences between the Google Pixel 7 Pro and the Samsung Galaxy S23 Ultra..",
+            "Customer: Please provide key differences in pixel and galaxy",
+            "AI: I can provide you with the key differences between the Google Pixel 7 Pro and the Samsung Galaxy S23 Ultra.."
+        ],
+        "token_count": 39930,
+        "user": 5744918999,
+        "user_name": "HG"
+    }
+}

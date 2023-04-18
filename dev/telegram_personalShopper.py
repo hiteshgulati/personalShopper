@@ -12,8 +12,21 @@ import time
 
 import json
 
+from collections import defaultdict
+
+import uuid
+
+import datetime
+
+import io
+session_details = defaultdict(lambda: False)
+
+sleep_time = 1
+token_limit_per_session = 1_000_000
 #OpenAI LLM
 llm = OpenAI(openai_api_key=os.environ['OPENAI_API_KEY'])
+
+CHATTING,STOP = range(2)
 
 #Data
 categories = ['mobile', 'grocery', 'fashion']
@@ -86,6 +99,22 @@ details ="""1.	reviews
 5.	alternate products 
 6.	purchase 
 7.	recommendation """
+
+shift_end_bye = """
+Hello there! I'm sorry to inform you that my shift as a shopping assistant at Tata Neu store has ended for the day. However, I would like to thank you for taking the time to interact with me and I hope that I was able to provide you with the assistance you needed.
+
+If you have any further questions or concerns, please do not hesitate to reach out to one of my fellow shopping assistants at Tata Neu store who will be more than happy to assist you. Alternatively, you can come back at a later time when I am available, and I will be happy to help you with your shopping needs.
+
+Thank you again for shopping with us, and I hope to see you again soon!
+"""
+
+cancel_thank_you = """
+Hello there! I appreciate you taking the time to visit Tata Neu store and for your interaction with me as your shopping assistant. Even though you are not interested in purchasing anything at this time, I want to thank you for considering us as your shopping destination.
+
+If you have any further needs or questions, please don't hesitate to come back and visit us again. Our team of shopping assistants are always ready and available to assist you with any concerns or queries you may have. We are committed to providing exceptional customer service to all our customers, and we hope that you will give us another opportunity to serve you in the future.
+
+Thank you again for your visit, and we look forward to seeing you again soon at Tata Neu store!
+"""
 
 moods = ['joking', 'formal', 'informal', 'fun', 'energetic']
 
@@ -241,9 +270,16 @@ def chat_with_ai(conversation_history,token_count,message=None,print_details=Fal
         except:
             pass
 
-
-
-
+def save_session():
+    file_path = os.path.join(os.getcwd(),'sessions',datetime.datetime.now().strftime("%y-%m-%d %H:%M:%S")+".json")
+    json_file_name = file_path
+    with open (json_file_name,'w') as fp:
+        pass
+    with io.open(json_file_name,"w",encoding="utf8") as outfile:
+        str_ = json.dumps(session_details,
+                indent=4, sort_keys=True,
+                separators=(',', ': '), ensure_ascii=False)
+        outfile.write(str_)
 
 from telegram import __version__ as TG_VER
 
@@ -274,7 +310,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-GENDER, PHOTO, LOCATION, BIO = range(4)
 
 from functools import wraps
 
@@ -293,102 +328,62 @@ def send_action(action):
 
 @send_action(constants.ChatAction.TYPING)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Starts the conversation and asks the user about their gender."""
-    reply_keyboard = [["Boy", "Girl", "Other"]]
+    """Starts the conversation by greeting the customer."""
+    user = update.message.from_user
+    session_details[user.id] = {'user':user.id,
+                                'user_name':user.first_name,
+                                'conversation_history':[],
+                                'token_count':0}
+    response, token_count = chat_with_ai(
+                                session_details[user.id]['conversation_history'],
+                                session_details[user.id]['token_count'])
+    session_details[user.id]['token_count'] += token_count
+    for line in response.split(". "):
+        time.sleep(sleep_time)
+        await update.message.reply_text(line)
+    save_session()
 
-    await update.message.reply_text(
-        "Hi! My name is Professor Bot. I will hold a conversation with you. "
-        "Send /cancel to stop talking to me.\n\n"
-        "Are you a boy or a girl?",
-        reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True, input_field_placeholder="Boy or Girl?"
-        ),
-    )
-
-    return GENDER
+    return CHATTING
 
 @send_action(constants.ChatAction.TYPING)
-async def gender(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def chatting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Stores the selected gender and asks for a photo."""
     user = update.message.from_user
-    logger.info("Gender of %s: %s", user.first_name, update.message.text)
-    await update.message.reply_text(
-        "I see! Please send me a photo of yourself, "
-        "so I know what you look like, or send /skip if you don't want to.",
-        reply_markup=ReplyKeyboardRemove(),
-    )
 
-    return PHOTO
-
-@send_action(constants.ChatAction.TYPING)
-async def photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the photo and asks for a location."""
-    user = update.message.from_user
-    photo_file = await update.message.photo[-1].get_file()
-    await photo_file.download_to_drive("user_photo.jpg")
-    logger.info("Photo of %s: %s", user.first_name, "user_photo.jpg")
-    await update.message.reply_text(
-        "Gorgeous! Now, send me your location please, or send /skip if you don't want to."
-    )
-
-    return LOCATION
-
-@send_action(constants.ChatAction.TYPING)
-async def skip_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Skips the photo and asks for a location."""
-    user = update.message.from_user
-    logger.info("User %s did not send a photo.", user.first_name)
-    await update.message.reply_text(
-        "I bet you look great! Now, send me your location please, or send /skip."
-    )
-
-    return LOCATION
-
-@send_action(constants.ChatAction.TYPING)
-async def location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the location and asks for some info about the user."""
-    user = update.message.from_user
-    user_location = update.message.location
-    logger.info(
-        "Location of %s: %f / %f", user.first_name, user_location.latitude, user_location.longitude
-    )
-    await update.message.reply_text(
-        "Maybe I can visit you sometime! At last, tell me something about yourself."
-    )
-
-    return BIO
-
-@send_action(constants.ChatAction.TYPING)
-async def skip_location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Skips the location and asks for info about the user."""
-    user = update.message.from_user
-    logger.info("User %s did not send a location.", user.first_name)
-    await update.message.reply_text(
-        "You seem a bit paranoid! At last, tell me something about yourself."
-    )
-
-    return BIO
+    response, token_count = chat_with_ai(
+                                session_details[user.id]['conversation_history'],
+                                session_details[user.id]['token_count'],
+                                message=update.message.text)
+    
+    session_details[user.id]['token_count'] += token_count
+    
+    logger.info("Customer: %s \n AI: %s", update.message.text, response)
+    print(response)
+    for r in response:
+        for line in r.split(". "):
+            time.sleep(sleep_time)
+            await update.message.reply_text(line)
+    save_session()
+    if session_details[user.id]['token_count'] < token_limit_per_session:
+        return CHATTING
+    else:
+        for line in shift_end_bye.split(". "):
+            time.sleep(sleep_time)
+            await update.message.reply_text(line)
+        return ConversationHandler.END
 
 
-async def bio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the info about the user and ends the conversation."""
-    user = update.message.from_user
-    logger.info("Bio of %s: %s", user.first_name, update.message.text)
-    await update.message.reply_text("Thank you! I hope we can talk again some day.")
-
-    return ConversationHandler.END
 
 @send_action(constants.ChatAction.TYPING)
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancels and ends the conversation."""
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
-    await update.message.reply_text(
-        "Bye! I hope we can talk again some day.", reply_markup=ReplyKeyboardRemove()
-    )
+    for line in shift_end_bye.split(". "):
+        time.sleep(sleep_time)
+        await update.message.reply_text(line)
 
     return ConversationHandler.END
-
 
 def main() -> None:
     """Run the bot."""
@@ -399,13 +394,7 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
-            GENDER: [MessageHandler(filters.Regex("^(Boy|Girl|Other)$"), gender)],
-            PHOTO: [MessageHandler(filters.PHOTO, photo), CommandHandler("skip", skip_photo)],
-            LOCATION: [
-                MessageHandler(filters.LOCATION, location),
-                CommandHandler("skip", skip_location),
-            ],
-            BIO: [MessageHandler(filters.TEXT & ~filters.COMMAND, bio)],
+            CHATTING: [MessageHandler(filters.TEXT & ~filters.COMMAND, chatting)]
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
@@ -414,8 +403,8 @@ def main() -> None:
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling()
+    
 
 
 if __name__ == "__main__":
-    print(os.environ['TELEGRAM_TOKEN'])
     main()
